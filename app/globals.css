@@ -1,0 +1,165 @@
+@import "tailwindcss";
+
+@theme {
+  /* =========================================================
+     Marsa Maroc — Palette brand officielle
+     Sources : logo_marsa_header.png
+       Navy    #1A3768  ("MARSA")
+       Cyan    #007CBB  ("MAROC" + étoile)
+     ========================================================= */
+
+  --color-navy-50: #f2f5fa;
+  --color-navy-100: #dde5f0;
+  --color-navy-200: #bac9de;
+  --color-navy-300: #8ca3c2;
+  --color-navy-400: #5d7ba4;
+  --color-navy-500: #3e5c8a;
+  --color-navy-600: #2d4a78;
+  --color-navy-700: #253e66;
+  --color-navy-800: #1f3458;
+  --color-navy-900: #1a3768; /* MARSA */
+  --color-navy-950: #0f2043;
+
+  --color-brand-50: #eef8fd;
+  --color-brand-100: #d7eefa;
+  --color-brand-200: #b2dff5;
+  --color-brand-300: #7ac8ee;
+  --color-brand-400: #3dacdf;
+  --color-brand-500: #1795cf;
+  --color-brand-600: #007cbb; /* MAROC */
+  --color-brand-700: #026497;
+  --color-brand-800: #05547c;
+  --color-brand-900: #0a4869;
+  --color-brand-950: #072e47;
+
+  /* Doré institutionnel sobre pour micro-accents (badges, étoiles) */
+  --color-gold-100: #f5ecce;
+  --color-gold-200: #e9d89c;
+  --color-gold-300: #d9be6a;
+  --color-gold-400: #c9a961;
+  --color-gold-500: #b58f3e;
+  --color-gold-600: #8f6d2d;
+
+  /* Neutres clairs — fonds & surfaces */
+  --color-ivory-50: #fbfaf6;
+  --color-ivory-100: #f5f1e9;
+  --color-ivory-200: #ece4d3;
+
+  --font-display: "Fraunces", "EB Garamond", ui-serif, Georgia, serif;
+  --font-sans: "Inter", "Lato", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --shadow-glow-brand: 0 0 0 1px rgb(0 124 187 / 0.35), 0 20px 45px -15px rgb(0 124 187 / 0.45);
+  --shadow-glow-navy: 0 0 0 1px rgb(26 55 104 / 0.35), 0 20px 45px -15px rgb(26 55 104 / 0.45);
+  --shadow-soft: 0 1px 2px rgb(26 55 104 / 0.06), 0 8px 24px -6px rgb(26 55 104 / 0.12);
+  --shadow-float: 0 10px 32px -12px rgb(26 55 104 / 0.25), 0 4px 12px -4px rgb(26 55 104 / 0.08);
+}
+
+@layer base {
+  :root {
+    color-scheme: light;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    background:
+      radial-gradient(at 15% 0%, rgb(0 124 187 / 0.08), transparent 45%),
+      radial-gradient(at 85% 12%, rgb(26 55 104 / 0.06), transparent 45%),
+      linear-gradient(to bottom, #fbfaf6 0%, #f5f1e9 100%);
+    color: var(--color-navy-900);
+    min-height: 100vh;
+  }
+
+  ::selection {
+    background: var(--color-brand-600);
+    color: white;
+  }
+
+  :focus-visible {
+    outline: 3px solid var(--color-brand-500);
+    outline-offset: 3px;
+    border-radius: 4px;
+  }
+}
+
+@layer utilities {
+  .font-display {
+    font-family: var(--font-display);
+    font-feature-settings: "ss01", "ss02";
+  }
+  .font-sans {
+    font-family: var(--font-sans);
+  }
+  .font-mono {
+    font-family: var(--font-mono);
+  }
+  .text-balance {
+    text-wrap: balance;
+  }
+  .text-pretty {
+    text-wrap: pretty;
+  }
+
+  .gradient-brand {
+    background: linear-gradient(
+      135deg,
+      var(--color-navy-950) 0%,
+      var(--color-navy-900) 40%,
+      var(--color-brand-800) 100%
+    );
+  }
+
+  .gradient-wave {
+    background: linear-gradient(
+      135deg,
+      var(--color-brand-600) 0%,
+      var(--color-brand-400) 55%,
+      var(--color-navy-900) 100%
+    );
+  }
+
+  .noise-layer {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='0.75' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.45 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  @keyframes tide {
+    0%, 100% { transform: translateX(0) translateY(0); }
+    50% { transform: translateX(-12px) translateY(4px); }
+  }
+
+  @keyframes pulse-soft {
+    0%, 100% { opacity: 0.6; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.06); }
+  }
+
+  @keyframes marquee {
+    from { transform: translateX(0); }
+    to   { transform: translateX(-50%); }
+  }
+
+  .animate-tide {
+    animation: tide 12s ease-in-out infinite;
+  }
+  .animate-pulse-soft {
+    animation: pulse-soft 3s ease-in-out infinite;
+  }
+  .animate-marquee {
+    animation: marquee 40s linear infinite;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

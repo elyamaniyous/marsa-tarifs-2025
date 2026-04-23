@@ -3,8 +3,7 @@
 import { motion, useReducedMotion, useScroll, useTransform } from "motion/react";
 import { useRef } from "react";
 import { ArrowRight, Sparkles, ArrowDown, ShieldCheck } from "lucide-react";
-import { PORTS } from "@/data/ports";
-import { MOROCCO_PATH, project } from "@/lib/geo";
+import { MarsaMap } from "@/components/MarsaMap";
 
 const METRICS = [
   { label: "Ports opérés", value: "11" },
@@ -164,8 +163,8 @@ export function Hero() {
               </div>
             </div>
 
-            <div className="mt-6 aspect-[4/5] overflow-hidden rounded-2xl border border-white/10 bg-white/5 p-4">
-              <MiniMap />
+            <div className="mt-6 aspect-[4/5] overflow-hidden rounded-2xl">
+              <MarsaMap hovered={null} filter="all" onHover={() => {}} showLogo={false} />
             </div>
 
             <dl className="mt-5 grid grid-cols-2 gap-3">
@@ -210,63 +209,3 @@ export function Hero() {
   );
 }
 
-function MiniMap() {
-  const W = 100;
-  const H = 125;
-  const PADX = 5;
-  const PADY = 4;
-  const moroccoPath = MOROCCO_PATH(W, H, PADX, PADY);
-
-  return (
-    <svg
-      viewBox={`0 0 ${W} ${H}`}
-      className="h-full w-full"
-      role="img"
-      aria-label="Carte du réseau Marsa Maroc"
-    >
-      <defs>
-        <filter id="mmGlow" x="-50%" y="-50%" width="200%" height="200%">
-          <feGaussianBlur stdDeviation="0.6" result="blur" />
-          <feMerge>
-            <feMergeNode in="blur" />
-            <feMergeNode in="SourceGraphic" />
-          </feMerge>
-        </filter>
-      </defs>
-
-      <path d={moroccoPath} fill="#ffffff" fillOpacity="0.10" stroke="#ffffff" strokeOpacity="0.3" strokeWidth="0.25" />
-
-      {PORTS.map((port, i) => {
-        const [x, y] = project(port.coords.lon, port.coords.lat, W, H, PADX, PADY);
-        return (
-          <g key={port.code} transform={`translate(${x}, ${y})`} filter="url(#mmGlow)">
-            <Star size={1.8} fill="#007CBB">
-              <animate
-                attributeName="opacity"
-                values="0.6;1;0.6"
-                dur="3s"
-                begin={`${i * 0.15}s`}
-                repeatCount="indefinite"
-              />
-            </Star>
-          </g>
-        );
-      })}
-    </svg>
-  );
-}
-
-function Star({ size = 2, fill = "#007CBB", children }: { size?: number; fill?: string; children?: React.ReactNode }) {
-  // 5-pointed star polygon, centered at (0,0), tip up
-  const points: string[] = [];
-  for (let i = 0; i < 10; i++) {
-    const r = i % 2 === 0 ? size : size * 0.45;
-    const a = -Math.PI / 2 + (i * Math.PI) / 5;
-    points.push(`${(r * Math.cos(a)).toFixed(3)},${(r * Math.sin(a)).toFixed(3)}`);
-  }
-  return (
-    <polygon points={points.join(" ")} fill={fill}>
-      {children}
-    </polygon>
-  );
-}

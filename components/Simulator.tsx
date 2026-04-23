@@ -17,6 +17,8 @@ import {
 import { PORTS } from "@/data/ports";
 import { TARIFFS, type TariffEntry } from "@/data/tariffs";
 import { cn, formatMAD } from "@/lib/cn";
+import type { ExportData } from "@/lib/exports";
+import { FileSpreadsheet, FileText, FileType2 } from "lucide-react";
 
 interface LineItem {
   id: string;
@@ -28,6 +30,7 @@ export function Simulator() {
   const [portCode, setPortCode] = useState("casa-dtcr");
   const [direction, setDirection] = useState<"import" | "export" | "all">("import");
   const [openSelect, setOpenSelect] = useState(false);
+  const [openExport, setOpenExport] = useState(false);
   const [lines, setLines] = useState<LineItem[]>([
     { id: "l1", tariffId: "c40p-imp", quantity: 10 },
   ]);
@@ -77,6 +80,48 @@ export function Simulator() {
 
   const updateLine = (id: string, patch: Partial<LineItem>) => {
     setLines((l) => l.map((x) => (x.id === id ? { ...x, ...patch } : x)));
+  };
+
+  const exportData: ExportData = {
+    portName: port.name,
+    portCity: port.city,
+    portRegion: port.region,
+    grandTotal,
+    lines: rows
+      .filter((r) => r.tariff)
+      .map((r) => ({
+        label: r.tariff!.label,
+        subcategory: r.tariff!.subcategory,
+        direction: r.tariff!.direction,
+        quantity: r.line.quantity,
+        unit: r.tariff!.unit,
+        unitPrice: r.tariff!.tarif,
+        subtotal: r.total,
+      })),
+  };
+
+  const requestQuote = () => {
+    const lines = rows
+      .filter((r) => r.tariff)
+      .map(
+        (r, i) =>
+          `${i + 1}. ${r.tariff!.label} — ${r.line.quantity} ${r.tariff!.unit} × ${formatMAD(r.tariff!.tarif)} = ${formatMAD(r.total)} MAD`
+      )
+      .join("\n");
+    const body = `Bonjour,
+
+Je souhaite un devis officiel basé sur la simulation suivante :
+
+Port : ${port.name}
+${lines}
+
+Total estimé HT : ${formatMAD(grandTotal)} MAD
+
+Merci de revenir vers moi avec votre meilleure offre.
+
+Cordialement,`;
+    const subject = `Demande de devis — ${port.name} — ${formatMAD(grandTotal)} MAD HT`;
+    window.location.href = `mailto:commercial@marsamaroc.co.ma?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
   };
 
   return (
@@ -277,9 +322,10 @@ export function Simulator() {
                 </p>
               </div>
 
-              <div className="flex flex-col gap-2">
+              <div className="relative flex flex-col gap-2">
                 <button
                   type="button"
+                  onClick={requestQuote}
                   className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-2xl bg-brand-500 px-5 py-3 text-sm font-medium text-white shadow-glow-brand transition-all hover:-translate-y-0.5 hover:bg-brand-400"
                 >
                   Demander un devis officiel
@@ -287,11 +333,80 @@ export function Simulator() {
                 </button>
                 <button
                   type="button"
+                  onClick={() => setOpenExport((v) => !v)}
+                  aria-haspopup="menu"
+                  aria-expanded={openExport}
                   className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-2xl border border-white/20 bg-white/5 px-5 py-3 text-sm font-medium text-white backdrop-blur transition-all hover:bg-white/10"
                 >
                   <Download className="h-4 w-4" aria-hidden />
-                  Exporter le simulateur
+                  Exporter
+                  <ChevronDown className={cn("h-4 w-4 transition-transform", openExport && "rotate-180")} aria-hidden />
                 </button>
+
+                <AnimatePresence>
+                  {openExport && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 8 }}
+                      transition={{ duration: 0.15 }}
+                      role="menu"
+                      className="absolute bottom-full right-0 z-30 mb-2 w-72 overflow-hidden rounded-2xl border border-white/10 bg-navy-950/95 p-2 shadow-float backdrop-blur-xl"
+                    >
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          const { exportXLSX } = await import("@/lib/exports");
+                          exportXLSX(exportData);
+                          setOpenExport(false);
+                        }}
+                        className="flex w-full cursor-pointer items-start gap-3 rounded-xl px-3 py-3 text-left text-white transition-colors hover:bg-white/10"
+                      >
+                        <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-500/20 text-emerald-300">
+                          <FileSpreadsheet className="h-4 w-4" aria-hidden />
+                        </div>
+                        <div>
+                          <p className="text-sm font-semibold">Excel (.xlsx)</p>
+                          <p className="mt-0.5 text-xs text-white/60">Fichier bien formaté, prêt à consolider</p>
+                        </div>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          const { exportCSV } = await import("@/lib/exports");
+                          exportCSV(exportData);
+                          setOpenExport(false);
+                        }}
+                        className="flex w-full cursor-pointer items-start gap-3 rounded-xl px-3 py-3 text-left text-white transition-colors hover:bg-white/10"
+                      >
+                        <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-500/25 text-brand-200">
+                          <FileText className="h-4 w-4" aria-hidden />
+                        </div>
+                        <div>
+                          <p className="text-sm font-semibold">CSV (.csv)</p>
+                          <p className="mt-0.5 text-xs text-white/60">UTF-8 avec BOM, séparateur ; pour Excel FR</p>
+                        </div>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          const { exportPDF } = await import("@/lib/exports");
+                          await exportPDF(exportData);
+                          setOpenExport(false);
+                        }}
+                        className="flex w-full cursor-pointer items-start gap-3 rounded-xl px-3 py-3 text-left text-white transition-colors hover:bg-white/10"
+                      >
+                        <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-rose-500/20 text-rose-300">
+                          <FileType2 className="h-4 w-4" aria-hidden />
+                        </div>
+                        <div>
+                          <p className="text-sm font-semibold">PDF brandé (.pdf)</p>
+                          <p className="mt-0.5 text-xs text-white/60">Mise en page Marsa Maroc officielle</p>
+                        </div>
+                      </button>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             </div>
           </div>

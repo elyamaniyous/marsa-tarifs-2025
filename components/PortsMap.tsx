@@ -3,8 +3,9 @@
 import { motion, AnimatePresence } from "motion/react";
 import { useState, useMemo } from "react";
 import { MapPin, TrendingUp, ChevronRight, Ship } from "lucide-react";
-import { PORTS, SPECIALTY_LABEL, type PortSpecialty } from "@/data/ports";
-import { MOROCCO_PATH, project } from "@/lib/geo";
+import { PORTS, SPECIALTY_LABEL } from "@/data/ports";
+import type { PortSpecialty } from "@/data/ports";
+import { MarsaMap } from "@/components/MarsaMap";
 import { cn } from "@/lib/cn";
 
 const FILTERS: { key: PortSpecialty | "all"; label: string }[] = [
@@ -96,7 +97,7 @@ export function PortsMap() {
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true, margin: "-80px" }}
             transition={{ duration: 0.7 }}
-            className="relative overflow-hidden rounded-3xl border border-navy-900/10 bg-white p-8 shadow-float"
+            className="relative overflow-hidden rounded-3xl border border-navy-900/10 bg-white p-6 shadow-float"
           >
             <div className="mb-4 flex items-center justify-between">
               <div>
@@ -107,24 +108,11 @@ export function PortsMap() {
                   Onze terminaux, un pavillon
                 </p>
               </div>
-              <div className="flex items-center gap-3 text-[11px] text-navy-600">
-                <span className="inline-flex items-center gap-1.5">
-                  <StarInline /> Ports
-                </span>
-                <span className="inline-flex items-center gap-1.5">
-                  <span className="inline-block h-2 w-2 rounded-full bg-brand-600" /> Atlantique
-                </span>
-                <span className="inline-flex items-center gap-1.5">
-                  <span className="inline-block h-2 w-2 rounded-full bg-navy-700" /> Méditerranée
-                </span>
-              </div>
             </div>
 
-            <MoroccoMap
-              hovered={hovered}
-              filter={filter}
-              onHover={setHovered}
-            />
+            <div className="h-[560px] w-full md:h-[640px]">
+              <MarsaMap hovered={hovered} filter={filter} onHover={setHovered} showLogo />
+            </div>
 
             <AnimatePresence mode="wait">
               {activePort && (
@@ -202,119 +190,3 @@ export function PortsMap() {
   );
 }
 
-function StarInline() {
-  return (
-    <svg width="12" height="12" viewBox="-2.4 -2.4 4.8 4.8" aria-hidden>
-      <polygon points={starPoints(1.9, 0.85)} fill="#007CBB" />
-    </svg>
-  );
-}
-
-function starPoints(outer: number, inner: number) {
-  const points: string[] = [];
-  for (let i = 0; i < 10; i++) {
-    const r = i % 2 === 0 ? outer : inner;
-    const a = -Math.PI / 2 + (i * Math.PI) / 5;
-    points.push(`${(r * Math.cos(a)).toFixed(3)},${(r * Math.sin(a)).toFixed(3)}`);
-  }
-  return points.join(" ");
-}
-
-interface MapProps {
-  hovered: string | null;
-  filter: PortSpecialty | "all";
-  onHover: (code: string | null) => void;
-}
-
-function MoroccoMap({ hovered, filter, onHover }: MapProps) {
-  const W = 100;
-  const H = 130;
-  const PADX = 4;
-  const PADY = 4;
-  const moroccoPath = MOROCCO_PATH(W, H, PADX, PADY);
-
-  return (
-    <svg
-      viewBox={`0 0 ${W} ${H}`}
-      className="h-[440px] w-full md:h-[540px]"
-      role="img"
-      aria-label="Carte du Maroc — ports Marsa Maroc"
-    >
-      <defs>
-        <linearGradient id="mapBody" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#213656" />
-          <stop offset="100%" stopColor="#1a3768" />
-        </linearGradient>
-        <filter id="starGlow" x="-60%" y="-60%" width="220%" height="220%">
-          <feGaussianBlur stdDeviation="0.9" result="blur" />
-          <feMerge>
-            <feMergeNode in="blur" />
-            <feMergeNode in="SourceGraphic" />
-          </feMerge>
-        </filter>
-      </defs>
-
-      {/* Silhouette unifiée Maroc (Sahara inclus, aucune couture) */}
-      <path
-        d={moroccoPath}
-        fill="url(#mapBody)"
-        stroke="#ffffff"
-        strokeOpacity="0.35"
-        strokeWidth="0.3"
-        strokeLinejoin="round"
-      />
-
-      {PORTS.map((port) => {
-        const [x, y] = project(port.coords.lon, port.coords.lat, W, H, PADX, PADY);
-        const isFiltered = filter === "all" || port.specialties.includes(filter);
-        const isHovered = hovered === port.code;
-        const fill = port.region === "Méditerranée" ? "#3dacdf" : "#007CBB";
-        const scale = isHovered ? 1.6 : isFiltered ? 1.0 : 0.6;
-        return (
-          <g
-            key={port.code}
-            transform={`translate(${x}, ${y})`}
-            onMouseEnter={() => onHover(port.code)}
-            onMouseLeave={() => onHover(null)}
-            onFocus={() => onHover(port.code)}
-            onBlur={() => onHover(null)}
-            tabIndex={0}
-            className="cursor-pointer focus:outline-none"
-            style={{ transition: "transform 0.3s ease" }}
-          >
-            <title>{port.name}</title>
-            {/* Pulse halo when filtered/hovered */}
-            {isFiltered && (
-              <circle r="3.6" fill={fill} fillOpacity="0" stroke={fill} strokeOpacity="0.6" strokeWidth="0.25">
-                <animate attributeName="r" values="2.2;4.2;2.2" dur="2.6s" repeatCount="indefinite" />
-                <animate attributeName="stroke-opacity" values="0.55;0;0.55" dur="2.6s" repeatCount="indefinite" />
-              </circle>
-            )}
-            <g transform={`scale(${scale})`} filter="url(#starGlow)" style={{ transition: "transform 0.3s ease" }}>
-              <polygon
-                points={starPoints(2.0, 0.9)}
-                fill={fill}
-                fillOpacity={isFiltered ? 1 : 0.35}
-              />
-              <polygon
-                points={starPoints(1.0, 0.45)}
-                fill="#ffffff"
-                fillOpacity={isFiltered ? 0.85 : 0.35}
-              />
-            </g>
-
-            {/* Label on hover */}
-            {isHovered && (
-              <g transform="translate(3, -1)">
-                <rect x="0" y="-2.5" rx="1.2" ry="1.2" width={port.name.length * 1.55} height="4.6" fill="#0f2043" />
-                <text x="1.3" y="0.9" fontSize="2.8" fill="#ffffff" fontFamily="Inter, sans-serif" fontWeight="600">
-                  {port.name}
-                </text>
-              </g>
-            )}
-          </g>
-        );
-      })}
-    </svg>
-  );
-}
